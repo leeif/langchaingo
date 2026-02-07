@@ -9,6 +9,9 @@ const (
 	// ThinkingModeNone disables thinking/reasoning.
 	ThinkingModeNone ThinkingMode = "none"
 
+	// ThinkingModeMinimal allocates minimal tokens for thinking (~10% of max tokens). only available for gpt-5 models.
+	ThinkingModeMinimal ThinkingMode = "minimal"
+
 	// ThinkingModeLow allocates minimal tokens for thinking (~20% of max tokens).
 	ThinkingModeLow ThinkingMode = "low"
 

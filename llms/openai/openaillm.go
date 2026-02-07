@@ -40,6 +40,12 @@ type ModelCapability struct {
 var modelCapabilities = []ModelCapability{
 	// OpenAI reasoning models (o1, o3 series) - no system message support
 	{
+		Pattern:          `(?i)^gpt-5`, // Matches gpt-5, gpt-5-mini, gpt-5-preview
+		SupportsSystem:   true,
+		SupportsThinking: true,
+		SupportsCaching:  false,
+	},
+	{
 		Pattern:          `(?i)^o[13](-mini|-preview)?$`, // Matches o1, o1-mini, o1-preview, o3, o3-mini
 		SupportsSystem:   false,                          // O1 models don't support system messages
 		SupportsThinking: true,
@@ -214,36 +220,37 @@ func (o *LLM) GenerateContent(ctx context.Context, messages []llms.MessageConten
 	// Note: OpenAI o1/o3 models have built-in reasoning and don't support reasoning_effort parameter
 	// This is kept for future models that might support it (like GPT-5)
 	var reasoningEffort string
-	// Commented out for now since current o1 models don't support this parameter
-	/*
-		if opts.Metadata != nil {
-			if config, ok := opts.Metadata["thinking_config"].(*llms.ThinkingConfig); ok {
-				// Map thinking mode to reasoning effort
-				switch config.Mode {
-				case llms.ThinkingModeLow:
-					reasoningEffort = "low"
-				case llms.ThinkingModeMedium:
-					reasoningEffort = "medium"
-				case llms.ThinkingModeHigh:
-					reasoningEffort = "high"
-				}
+	if opts.Metadata != nil {
+		if config, ok := opts.Metadata["thinking_config"].(*llms.ThinkingConfig); ok {
+			// Map thinking mode to reasoning effort
+			switch config.Mode {
+			case llms.ThinkingModeNone:
+				reasoningEffort = "none"
+			case llms.ThinkingModeMinimal:
+				reasoningEffort = "minimal"
+			case llms.ThinkingModeLow:
+				reasoningEffort = "low"
+			case llms.ThinkingModeMedium:
+				reasoningEffort = "medium"
+			case llms.ThinkingModeHigh:
+				reasoningEffort = "high"
+			}
 
-				// Handle streaming for thinking
-				if config.StreamThinking && opts.StreamingReasoningFunc == nil && opts.StreamingFunc != nil {
-					// Set up default reasoning streaming if requested but not provided
-					// Wrap the single-param streaming func into a reasoning func
-					opts.StreamingReasoningFunc = func(ctx context.Context, reasoningChunk []byte, chunk []byte) error {
-						// For default behavior, we might want to stream both or just the main content
-						// Here we'll just stream the main content chunk
-						if len(chunk) > 0 {
-							return opts.StreamingFunc(ctx, chunk)
-						}
-						return nil
+			// Handle streaming for thinking
+			if config.StreamThinking && opts.StreamingReasoningFunc == nil && opts.StreamingFunc != nil {
+				// Set up default reasoning streaming if requested but not provided
+				// Wrap the single-param streaming func into a reasoning func
+				opts.StreamingReasoningFunc = func(ctx context.Context, reasoningChunk []byte, chunk []byte) error {
+					// For default behavior, we might want to stream both or just the main content
+					// Here we'll just stream the main content chunk
+					if len(chunk) > 0 {
+						return opts.StreamingFunc(ctx, chunk)
 					}
+					return nil
 				}
 			}
 		}
-	*/
+	}
 
 	// Filter out internal metadata that shouldn't be sent to API
 	apiMetadata := make(map[string]any)

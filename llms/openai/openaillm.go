@@ -221,7 +221,7 @@ func (o *LLM) GenerateContent(ctx context.Context, messages []llms.MessageConten
 	// This is kept for future models that might support it (like GPT-5)
 	var reasoningEffort string
 	if opts.Metadata != nil {
-		if config, ok := opts.Metadata["thinking_config"].(*llms.ThinkingConfig); ok {
+		if config, ok := opts.Metadata["thinking_config"].(*llms.ThinkingConfig); ok && o.SupportsReasoning() {
 			// Map thinking mode to reasoning effort
 			switch config.Mode {
 			case llms.ThinkingModeNone:
@@ -420,6 +420,11 @@ func (o *LLM) SupportsReasoning() bool {
 	if strings.HasPrefix(modelLower, "o4-") ||
 		strings.HasPrefix(modelLower, "o5-") {
 		return true
+	}
+
+	// gpt-5-chat models don't support reasoning
+	if strings.HasPrefix(modelLower, "gpt-5-chat") {
+		return false
 	}
 
 	// GPT-5 series (expected to have reasoning capabilities)
